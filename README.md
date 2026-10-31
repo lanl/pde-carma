@@ -185,14 +185,7 @@ direction-specific time reversal. It never writes into `implementations/`.
 
 No datasets, trained checkpoints, or experiment outputs were supplied, so full training, historical checkpoint loading, numerical parity, and paper-result reproduction are not claimed.
 
-## Important limitations
-
-- The unchanged snapshots contain legacy hardcoded machine/cluster paths and private-development references. External wrappers avoid depending on them, but strict preservation means those strings remain inside `implementations/`.
-- The supplied Uni-DiT `infer_dit.py` invokes backward/cyclic routines even though the designated training entry point is forward-only. The wrapper preserves that behavior; use the source forward-only reproduction evaluator for scientifically valid Uni-DiT evaluation and do not interpret its backward/cyclic output as CARMA evidence.
-- A legacy `cyclic_reasoner.py` in the snapshots imports a missing sampler module and is not used by the external launcher.
-- Diffusion reverse steps and flow-matching ODE steps are distinct settings.
-
 ## License, citation, and release status
 
-The snapshots contain no verified open-source license, ownership authorization, or citation metadata. This repository therefore intentionally does not invent a `LICENSE` or `CITATION.cff`. Public release remains blocked until ownership, third-party code, dataset redistribution, internal-reference, and citation questions are resolved. Nothing has been pushed or published by this migration.
+Note: EIDR number O#5133 - conditional-flow-matching on open-pde-datasets. This program is Open-Source under the MIT License.
 
