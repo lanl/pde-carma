@@ -1,0 +1,48 @@
+# Local migration work (not part of the deliverable)
+.migration_sources/
+.superseded/
+*.zip
+
+# Python tooling
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Editors / operating systems (archived implementation metadata stays tracked)
+Thumbs.db
+.idea/
+.vscode/
+
+# Local datasets, checkpoints, and generated results
+/data/
+/checkpoints/
+/runs/
+/.local/
+datasets/**
+!datasets/.gitkeep
+artifacts/**
+!artifacts/.gitkeep
+!artifacts/checkpoints/
+!artifacts/checkpoints/.gitkeep
+!artifacts/results/
+!artifacts/results/.gitkeep
+implementations/**/datasets/
+implementations/**/models/
+implementations/**/results/
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.nc
+*.h5
+*.hdf5
+*.log
+

@@ -1,0 +1,20 @@
+# Documentation-only settings collected from the supplied migration brief.
+# The launcher does not inject these values into the unchanged implementations.
+candidate_budget_ablation:
+  values: [4, 8, 16]
+
+flow_matching_paper_ode_steps:
+  ce-rm: 5
+  ce-rpui: 5
+  ns-pwc: 100
+  fns-kf: 100
+  ns-sl: 50
+
+legacy_dit_defaults:
+  unidirectional:
+    num_diffusion_steps: 1000
+    samp_diff_steps: 100
+  bidirectional:
+    num_diffusion_steps: 100
+    samp_diff_steps: 1000
+

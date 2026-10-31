@@ -1,0 +1,19 @@
+name: pytorch_py312_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - matplotlib
+  - scikit-learn
+  - tqdm
+  - netcdf4
+  - h5py
+  - pandas
+  - openpyxl
+  - huggingface_hub
+  - hf-xet
+  - pip
+  - pip:
+      - ipynbname
+      - neuraloperator

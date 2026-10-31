@@ -1,0 +1,4 @@
+# The archived implementations are integrity-checked byte-for-byte.
+# Disable Git text/EOL normalization for every original file.
+implementations/** -text
+
