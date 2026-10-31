@@ -141,11 +141,8 @@ The original scripts do not require those folder names. Pass the downloaded file
 
 - [Training](docs/training.md)
 - [Inference and evaluation](docs/inference.md)
-- [Paper settings and reproduction scripts](docs/reproducibility.md)
 - [Installation details](docs/installation.md)
-- [Source-integrity report](docs/source_integrity.md)
 - [Validation report](docs/validation_report.md)
-- [Publication-readiness blockers](docs/publication_readiness.md)
 
 The integrity checker compares every copied file against a source-derived SHA-256 manifest:
 
@@ -163,13 +160,10 @@ python tools/smoke_models.py
 python tools/smoke_models.py --python /path/to/model-env/bin/python --json
 ```
 
-Each variant runs in its own subprocess. The test constructs a tiny model,
-runs a synthetic forward and backward pass, and takes one native DDIM or ODE
-sampling step. It is useful for catching import, tensor-shape, and basic runtime
+Each variant runs in its own subprocess. The test constructs a tiny model, runs a synthetic forward and backward pass, and takes one native DDIM or ODE sampling step. It is useful for catching import, tensor-shape, and basic runtime
 errors; it is not a substitute for loading the real data and checkpoints.
 
-A second smoke test covers the preserved NPY loaders and training-pair logic.
-It requires PyTorch, NumPy, and xarray, but still needs no real dataset:
+A second smoke test covers the preserved NPY loaders and training-pair logic. It requires PyTorch, NumPy, and xarray, but still needs no real dataset:
 
 ```bash
 python tools/smoke_data_loaders.py
@@ -178,14 +172,18 @@ python tools/smoke_data_loaders.py
 python tools/smoke_data_loaders.py --python /path/to/model-env/bin/python --json
 ```
 
-It creates small arrays in a temporary directory, checks train-statistic
-normalization and batch shapes, verifies forward-only Uni-DiT pairs,
-forward/backward Bi-DiT and Bi-FlowFormer controls, and Uni-FlowFormer's
-direction-specific time reversal. It never writes into `implementations/`.
+It creates small arrays in a temporary directory, checks train-statistic normalization and batch shapes, verifies forward-only Uni-DiT pairs, forward/backward Bi-DiT and Bi-FlowFormer controls, and Uni-FlowFormer's direction-specific time reversal. It never writes into `implementations/`.
 
-No datasets, trained checkpoints, or experiment outputs were supplied, so full training, historical checkpoint loading, numerical parity, and paper-result reproduction are not claimed.
-
-## License, citation, and release status
+## License
 
 Note: EIDR number O#5133 - conditional-flow-matching on open-pde-datasets. This program is Open-Source under the MIT License.
 
+## Release status
+
+**Status: Research preview — code available, pretrained assets pending.**
+
+This repository consolidates the unidirectional and bidirectional DiT and FlowFormer implementations into one codebase. The original implementation files remain unchanged, and the external launchers and synthetic smoke tests have been validated.
+
+Datasets and pretrained checkpoints are not included. Checkpoints are planned for release through Hugging Face, but they are not currently available.
+
+A fully reproducible release will follow after the publication.
