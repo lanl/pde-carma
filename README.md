@@ -1,189 +1,162 @@
 # pde-carma
 
-This repository brings the four PDE forecasting implementations used by CARMA into one checkout. The practical goal is simple: give each model a consistent way to launch while leaving the research code exactly as it was supplied.
+`pde-carma` brings four CARMA PDE-forecasting implementations into one
+repository.
 
-The upstream code was organized as two model-family repositories: DiT and
-FlowFormer (FMT). Each repository had separate unidirectional and bidirectional
-branches. This project combines snapshots of those four branches into a single
-repository while keeping every implementation independent and unchanged.
+The original code came from two model repositories—DiT and FlowFormer
+(FMT)—with unidirectional and bidirectional branches in each. The four source
+snapshots are kept separately under `implementations/`. Their model code,
+training logic, data loaders, samplers, and checkpoint formats are unchanged.
 
-Each source snapshot is copied byte-for-byte under `implementations/`. The launchers, tests, integrity tools, and documentation live outside those directories. We did not rewrite or deduplicate any model architecture, training loop, sampler, evaluator, data loader, default, or checkpoint format.
+## Included models
 
-## Implementations
-
-| Wrapper name | Original training entry point | Original inference entry point | Preserved semantics |
-|---|---|---|---|
-| `dit-unidirectional` | `train_dit_unidirectional.py` | `infer_dit.py` | Forward-only pairs; fixed control `[1,0]` |
-| `dit-bidirectional` | `train_dit.py` | `infer_dit.py` | One direction-conditioned diffusion model |
-| `flowformer-unidirectional` | `train_flowformer.py --direction forward\|backward` | `infer_flowformer.py` | Separate forward and backward checkpoints |
-| `flowformer-bidirectional` | `train_flowformer.py` | `infer_flowformer.py` | One direction-conditioned flow model |
-
-The unidirectional implementations are not silently converted into bidirectional models. CARMA selection is exposed only for the two source implementations that contain a bidirectional cyclic evaluation path.
-
-## Quick start
-
-The external launcher uses only the Python standard library. It changes into the selected implementation directory, invokes its original entry point with the selected Python executable, and forwards source arguments unchanged.
-
-```bash
-# Show registered variants and source entry points.
-python scripts/run.py list
-
-# Equivalent after an editable install (or with PYTHONPATH=src):
-python -m pde_carma list
-
-# Inspect resolution and argument forwarding without executing source code.
-python scripts/run.py --dry-run train dit-unidirectional -- --ds ce-rm --epochs 2000
-
-# Train the four modes. Uni-FlowFormer is run once per direction.
-python scripts/run.py train dit-unidirectional -- --ds ce-rm --dataset_root /path/to/data-root
-python scripts/run.py train dit-bidirectional -- --ds ce-rm --dataset_root /path/to/data-root
-python scripts/run.py train flowformer-unidirectional -- --direction forward --ds ce-rm --dataset_root /path/to/data-root
-python scripts/run.py train flowformer-unidirectional -- --direction backward --ds ce-rm --dataset_root /path/to/data-root
-python scripts/run.py train flowformer-bidirectional -- --ds ce-rm
-
-# Run the unchanged inference entry points.
-python scripts/run.py infer dit-bidirectional -- --ckpt /path/to/checkpoint.pth --dataset_root /path/to/data-root --cyclic_runs 4 8 16
-python scripts/run.py infer flowformer-bidirectional -- --ckpt /path/to/checkpoint.pth --cyclic_runs 4 8 16
-```
-
-Use `--python /path/to/python` before the subcommand to select a model environment. Everything after the separator `--` is passed to the original script. The eight convenience launchers under `scripts/train/` and `scripts/infer/` provide the same preservation-oriented behavior.
-
-## Repository layout
-
-```text
-pde-carma/
-├── implementations/              # Immutable source snapshots
-│   ├── dit_unidirectional/
-│   ├── dit_bidirectional/
-│   ├── flowformer_unidirectional/
-│   └── flowformer_bidirectional/
-├── src/pde_carma/                # External registry and subprocess launcher
-├── scripts/                      # Unified and variant-specific wrappers
-├── tools/                        # Source-integrity verification
-├── tests/                        # Wrapper/integrity tests; no source edits
-└── docs/                         # Installation, workflows, reports
-```
-
-See [the documented structure](docs/directory_structure.md) for responsibilities and the exact source-root mapping.
-
-## Installation
-
-The four snapshots retain their own environment files and do not have a verified universal environment. Their runtime imports include PyTorch, NumPy, xarray, and Matplotlib; reproduction utilities may require SciPy, pandas, and other packages. Install a platform-appropriate PyTorch build separately rather than assuming a CUDA version.
-
-```bash
-# Optional: install the external launcher itself.
-python -m pip install -e . --no-deps
-```
-
-The implementation environment files do not include every runtime dependency, notably PyTorch. See [installation.md](docs/installation.md) before creating an experiment environment.
-
-## Where to put the datasets
-
-Dataset files are not included, and the supplied snapshots do not contain a
-verified download script or complete upstream URL list. The layout below is
-therefore about placement, not acquisition. A convenient shared location is
-the repository's top-level `datasets/` directory:
-
-```text
-pde-carma/
-`-- datasets/
-    |-- pdegym/
-    |   `-- CE-RM/CE-RM.nc
-    |-- pdebench/
-    |   |-- vids_train_2d-reacdiff.npy
-    |   |-- vids_val_2d-reacdiff.npy
-    |   `-- vids_test_2d-reacdiff.npy
-    `-- thewell/
-        |-- vids_train_active-matter.npy
-        |-- vids_val_active-matter.npy
-        `-- vids_test_active-matter.npy
-```
-
-The original programs do not all resolve data paths in the same way:
-
-| Workflow | Dataset location and command-line behavior |
+| Launcher name | What it trains |
 |---|---|
-| Uni-DiT train/infer | Keep data in `<repo>/datasets` and pass `--dataset_root <repo>` |
-| Bi-DiT train/infer | Keep data in `<repo>/datasets` and pass `--dataset_root <repo>` |
-| Uni-FlowFormer training | Keep data in `<repo>/datasets` and pass `--dataset_root <repo>` |
-| Uni-FlowFormer inference | The unchanged script reads `implementations/flowformer_unidirectional/datasets/`; it has no `--dataset_root` option |
-| Bi-FlowFormer train/infer | The unchanged scripts read `implementations/flowformer_bidirectional/datasets/`; they have no `--dataset_root` option |
+| `dit-unidirectional` | A forward-only DiT |
+| `dit-bidirectional` | One direction-conditioned DiT |
+| `flowformer-unidirectional` | Separate forward and backward FlowFormer models |
+| `flowformer-bidirectional` | One direction-conditioned FlowFormer |
 
-For the two implementation-local cases, copy the required files there or create a temporary directory link to the shared top-level data. Those local data directories are ignored by Git, but they are extra files relative to the immutable source snapshot; remove or unmount them before running the strict source-integrity check. The complete filename list, supported datasets, channels, and configured splits are in [datasets.md](docs/datasets.md).
+CARMA cyclic selection is available only for the bidirectional models.
 
-## Checkpoints
+## Setup
 
-Pretrained checkpoints are not bundled. They are intended to be distributed through Hugging Face, but that download is **not available yet**: there is currently no verified repository ID, URL, filename list, or published checksum to put in this README.
+Each implementation contains its original `environment.yml`. Create separate
+DiT and FlowFormer environments when exact experiment isolation matters, then
+install a PyTorch build suitable for your machine. PyTorch is not included in
+the supplied environment files.
 
-Once the Hugging Face repository is published, the expected workflow will use
-the documented [Hugging Face `hf download` CLI](https://huggingface.co/docs/huggingface_hub/guides/cli):
-
-```bash
-python -m pip install -U huggingface_hub
-hf download <org-or-user>/<repository> --local-dir artifacts/checkpoints
-```
-
-`<org-or-user>/<repository>` is deliberately a placeholder; do not treat it as a working address. Checkpoints may be arranged however is convenient under `artifacts/checkpoints/`, for example:
-
-```text
-artifacts/checkpoints/
-|-- dit_unidirectional/
-|-- dit_bidirectional/
-|-- flowformer_unidirectional/
-|   |-- forward/
-|   `-- backward/
-`-- flowformer_bidirectional/
-```
-
-The original scripts do not require those folder names. Pass the downloaded file explicitly with an absolute `--ckpt` path. Uni-FlowFormer needs separate forward and backward checkpoints; each of the other variants uses its own checkpoint and formats must not be mixed. When files become available, the release instructions should also publish SHA-256 checksums and identify the dataset, architecture, direction, and sampling configuration for every checkpoint. See [inference.md](docs/inference.md) for the metadata expected inside each file.
-
-## Reproduction and validation
-
-- [Training](docs/training.md)
-- [Inference and evaluation](docs/inference.md)
-- [Installation details](docs/installation.md)
-- [Validation report](docs/validation_report.md)
-
-The integrity checker compares every copied file against a source-derived SHA-256 manifest:
+The common launcher can run directly from the checkout. Installing it is
+optional:
 
 ```bash
-python tools/verify_source_integrity.py
+python -m pip install -e . --no-deps
+python scripts/run.py list
 ```
 
-With PyTorch installed, a lightweight CPU smoke test can exercise all four
-preserved model modules without a dataset or checkpoint:
+Activate the model environment before training, or pass
+`--python /path/to/environment/python` before the `train` or `infer` command.
+See [installation.md](docs/installation.md) for details.
+
+## Data
+
+Datasets and dataset download scripts are not included. Store shared data under
+`datasets/`; the exact filenames and supported datasets are listed in
+[datasets.md](docs/datasets.md).
+
+| Workflow | Dataset location |
+|---|---|
+| Both DiT variants | `/path/to/pde-carma/datasets/`; pass `--dataset_root /path/to/pde-carma` |
+| Uni-FlowFormer training | `/path/to/pde-carma/datasets/`; pass `--dataset_root /path/to/pde-carma` |
+| Uni-FlowFormer inference | `implementations/flowformer_unidirectional/datasets/` |
+| Bi-FlowFormer training and inference | `implementations/flowformer_bidirectional/datasets/` |
+
+For an implementation-local path, temporarily copy or link the required data
+directory. Remove that copy or link before running strict source-integrity
+checks because it adds files below `implementations/`.
+
+## Training
+
+Arguments after `--` are passed unchanged to the original training script.
+
+```bash
+# DiT
+python scripts/run.py train dit-unidirectional -- --ds ce-rm --dataset_root /path/to/pde-carma
+python scripts/run.py train dit-bidirectional -- --ds ce-rm --dataset_root /path/to/pde-carma
+
+# Uni-FlowFormer needs one run per direction
+python scripts/run.py train flowformer-unidirectional -- --direction forward --ds ce-rm --dataset_root /path/to/pde-carma
+python scripts/run.py train flowformer-unidirectional -- --direction backward --ds ce-rm --dataset_root /path/to/pde-carma
+
+# Bidirectional FlowFormer
+python scripts/run.py train flowformer-bidirectional -- --ds ce-rm
+```
+
+The original trainers save checkpoints under their implementation's `models/`
+directory, sometimes inside a run-specific subdirectory. More options are in
+[training.md](docs/training.md).
+
+## Checkpoints and inference
+
+You can train checkpoints locally. Pretrained checkpoints are planned for
+Hugging Face, but they are **not available yet**. There is no verified
+repository ID, filename list, or checksum at this time.
+
+After the Hugging Face repository is published, the download will follow this
+pattern:
+
+```bash
+python -m pip install huggingface_hub
+hf download ORG/REPO --local-dir artifacts/checkpoints
+```
+
+`ORG/REPO` is a placeholder and is not currently usable. Store downloaded
+weights under `artifacts/checkpoints/` and pass an absolute path to `--ckpt`.
+Uni-FlowFormer requires separate forward and backward checkpoints. Do not mix
+checkpoints between variants.
+
+```bash
+# DiT example
+python scripts/run.py infer dit-bidirectional -- \
+  --ckpt /absolute/path/to/model.pth \
+  --dataset_root /path/to/pde-carma
+
+# FlowFormer example
+python scripts/run.py infer flowformer-bidirectional -- \
+  --ckpt /absolute/path/to/model.pth
+```
+
+The unchanged Uni-DiT generic inference script also runs backward and cyclic
+routines even though its trainer is forward-only. Use the forward-only
+evaluation workflow in [inference.md](docs/inference.md) for Uni-DiT results.
+
+## CARMA
+
+```bash
+python scripts/run.py carma dit-bidirectional -- \
+  --ckpt /absolute/path/to/model.pth \
+  --dataset_root /path/to/pde-carma \
+  --cyclic_runs 4 8 16
+
+python scripts/run.py carma flowformer-bidirectional -- \
+  --ckpt /absolute/path/to/model.pth \
+  --cyclic_runs 4 8 16
+```
+
+## Quick checks
+
+Check command resolution without starting a run:
+
+```bash
+python scripts/run.py --dry-run train dit-unidirectional -- --ds ce-rm
+```
+
+The model smoke test requires PyTorch. The data-loader smoke test requires
+PyTorch, NumPy, and xarray.
 
 ```bash
 python tools/smoke_models.py
-
-# Or point it at a separate model environment.
-python tools/smoke_models.py --python /path/to/model-env/bin/python --json
-```
-
-Each variant runs in its own subprocess. The test constructs a tiny model, runs a synthetic forward and backward pass, and takes one native DDIM or ODE sampling step. It is useful for catching import, tensor-shape, and basic runtime
-errors; it is not a substitute for loading the real data and checkpoints.
-
-A second smoke test covers the preserved NPY loaders and training-pair logic. It requires PyTorch, NumPy, and xarray, but still needs no real dataset:
-
-```bash
 python tools/smoke_data_loaders.py
-
-# Or use a separate model environment.
-python tools/smoke_data_loaders.py --python /path/to/model-env/bin/python --json
+python -m unittest discover -s tests
 ```
 
-It creates small arrays in a temporary directory, checks train-statistic normalization and batch shapes, verifies forward-only Uni-DiT pairs, forward/backward Bi-DiT and Bi-FlowFormer controls, and Uni-FlowFormer's direction-specific time reversal. It never writes into `implementations/`.
+## Documentation
 
-## License
-
-Note: EIDR number O#5133 - conditional-flow-matching on open-pde-datasets. This program is Open-Source under the MIT License.
+- [Installation](docs/installation.md)
+- [Datasets](docs/datasets.md)
+- [Training](docs/training.md)
+- [Inference and evaluation](docs/inference.md)
+- [Repository structure](docs/directory_structure.md)
 
 ## Release status
 
-**Status: Research preview — code available, pretrained assets pending.**
+**Research preview: code available, pretrained assets pending.**
 
-This repository consolidates the unidirectional and bidirectional DiT and FlowFormer implementations into one codebase. The original implementation files remain unchanged, and the external launchers and synthetic smoke tests have been validated.
+Datasets and pretrained checkpoints are not included. Full training,
+historical checkpoint loading, numerical parity, and paper-result reproduction
+have not yet been verified in this combined repository.
 
-Datasets and pretrained checkpoints are not included. Checkpoints are planned for release through Hugging Face, but they are not currently available.
+## License
 
-A fully reproducible release will follow after the publication.
+EIDR O#5133: *conditional-flow-matching on open-pde-datasets*. This program is
+released under the MIT License.
