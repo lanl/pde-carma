@@ -67,7 +67,7 @@ Both commands invoke the original `infer_flowformer.py`. The model uses `[1,0]` 
 
 ## Checkpoint behavior
 
-No pretrained checkpoint is currently available for download. A Hugging Face release is planned, but no verified repository ID, filenames, or checksums have been published. The root README contains a placeholder download pattern for use only after that information is available.
+No pretrained checkpoint is currently available for download. A Hugging Face release is planned after the publication.
 
 The original inference classes expect a checkpoint containing `args` and `model_state_dict`. They construct the architecture from saved dataset/model-size metadata, strip a leading DataParallel `module.` prefix when present, and load weights strictly. Preserve at least these metadata fields:
 

@@ -37,11 +37,6 @@ pde-carma/
     ├── datasets.md
     ├── training.md
     ├── inference.md
-    ├── reproducibility.md
-    ├── source_manifest.json
-    ├── source_integrity.md
-    ├── validation_report.md
-    └── publication_readiness.md
 ```
 
 ## Source-root mapping
@@ -54,27 +49,3 @@ pde-carma/
 | `pde-flowformer-bidirectional.zip` | `pde-flowformer-bidirectional-flowformer/` | `implementations/flowformer_bidirectional/` | `train_flowformer.py` |
 
 The contents of each archive root were copied directly into its destination. No archive-root directory was inserted as an extra level.
-
-## Immutability boundary
-
-Everything below `implementations/` is source-of-truth material and must remain byte-for-byte identical to the extracted archives. In particular:
-
-- original `README.md`, environment files, launchers, hardcoded paths, and duplicate files remain present;
-- no `__init__.py` files, import rewrites, portability fixes, or formatting changes are inserted there;
-- no shared module is substituted for an implementation-local module;
-- source entry points continue to resolve `utils.*` exactly as before.
-
-Run `python tools/verify_source_integrity.py` after any checkout or packaging operation. Any missing, extra, or changed implementation file is a release-blocking discrepancy.
-
-The root `.gitattributes` marks `implementations/**` as `-text`, preventing Git from normalizing line endings and invalidating the byte-level hashes on another platform. The launcher also sets `PYTHONDONTWRITEBYTECODE=1` for child processes so normal imports do not add `__pycache__` files to the preserved trees.
-
-## External orchestration boundary
-
-`src/pde_carma` knows only implementation locations and original entry points. It executes a child Python process with its working directory set to the selected implementation. This preserves source-local imports and relative paths without changing the source.
-
-The wrappers do not normalize flags, translate hyperparameters, merge checkpoint formats, or import model modules. They only select the original script and forward the remaining arguments in order.
-
-## Generated files
-
-Original scripts may create `models/`, `results/`, `datasets/`, plots, `.npy` arrays, and checkpoints inside an implementation tree. These generated files are not part of the immutable source manifest and should remain untracked. A pristine integrity check must be run against the committed source before release; use explicit data roots or external links where the source CLI supports them.
-
