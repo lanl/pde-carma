@@ -84,5 +84,3 @@ python scripts/run.py --dry-run train flowformer-unidirectional -- \
   --direction backward --ds fns-kf --num_ode_steps 100
 ```
 
-Full training was not run during migration.
-
